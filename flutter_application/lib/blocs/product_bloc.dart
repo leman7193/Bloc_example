@@ -1,12 +1,13 @@
 import 'dart:async';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_application/api/db_api.dart';
 import 'package:flutter_application/models/category.dart';
 import 'package:flutter_application/models/product.dart';
 import 'package:flutter_application/widgets/bloc_provider.dart';
 
 class ProductBloc extends BlocBase {
-  List<Product> _products;
+  List<Product> _products = List();
 
   StreamController<List<Product>> _productController =
       StreamController<List<Product>>();
@@ -24,7 +25,16 @@ class ProductBloc extends BlocBase {
 
   void getProducts(Category category) {
     DbAPi dbApi = DbAPi();
-    _products = dbApi.getProducts(category);
-    _inProducts.add(_products);
+    dbApi.getProducts(category).listen((snapShot) {
+      List<Product> tempProducts = List();
+      for (DocumentSnapshot doc in snapShot.documents) {
+        Product product = Product.fromJson(doc.data);
+        product.id = doc.documentID;
+        tempProducts.add(product);
+      }
+      _products.clear();
+      _products.addAll(tempProducts);
+      _inProducts.add(_products);
+    });
   }
 }
